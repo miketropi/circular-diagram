@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import CircularDiagram from './components/CircularDiagram'
 import './App.css'
 import { v4 as uuidv4 } from 'uuid';
@@ -10,7 +11,7 @@ import centerImage from '/center-image.png'
 
 const CircularDiagramData = [
   {
-    id: uuidv4(),
+    id: 'MEANINGFUL_OUTCOMES',
     title: 'MEANINGFUL OUTCOMES',
     color: '#FF6B35',
     icon: image1,
@@ -152,13 +153,21 @@ const CircularDiagramData = [
 ]
 
 function App() {
+  const [parentActive, setParentActive] = useState('');
+
+  const handleSectionClick = (section) => {
+    let __id = section.parentId || section.id;
+    setParentActive(__id);
+  };
+
   return (
     <div style={{ width: `100%`, display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
       <CircularDiagram 
         CircularDiagramData={ CircularDiagramData } 
         CenterImage={ centerImage }  
-        onClick={(section) => console.log(section)}
+        onClick={ handleSectionClick }
         fontFamily="Arial"
+        parentActive={ parentActive }
       />
     </div>
   )

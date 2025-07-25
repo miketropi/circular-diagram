@@ -1,13 +1,14 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as fabric from 'fabric';
+import { darkenHexColor } from '../util/helpers';
 
-const CircularDiagram = ({ CircularDiagramData }) => {
+const CircularDiagram = ({ CircularDiagramData, CenterImage, onClick, fontFamily }) => {
   const canvasRef = useRef(null);
   const fabricCanvasRef = useRef(null);
   const canvasSize = 740;
   const centerX = canvasSize / 2;
   const centerY = canvasSize / 2;
-  const radius = 340;
+  const radius = canvasSize / 2;
 
   useEffect(() => {
     // Initialize Fabric.js canvas
@@ -24,7 +25,7 @@ const CircularDiagram = ({ CircularDiagramData }) => {
     drawSections(fabricCanvas);
     
     // Draw center content
-    // drawCenterContent(fabricCanvas);
+    drawCenterContent(fabricCanvas);
     
     // Cleanup
     return () => {
@@ -69,20 +70,20 @@ const CircularDiagram = ({ CircularDiagramData }) => {
       const startAngle = currentAngle;
       const endAngle = currentAngle + radiansPerSection;
 
-      drawSection(fabricCanvas, section, startAngle, endAngle, radius);
+      drawSection(fabricCanvas, section, startAngle, endAngle, radius, "pointer");
       
-      // drawSectionItems(fabricCanvas, section, startAngle, endAngle);
       let __radius = radius;
       section.items.forEach((element, __index) => {
-        __radius = __radius * 0.85;
+        __radius = __radius - 38; //__radius * 0.85;
         drawSection(fabricCanvas, {
+          id: element.id,
           title: element.label,
-          color: __index % 2 ? `#eee` : `#fafafa`,
+          color: __index % 2 ? `#eeeeee` : `#fafafa`,
           textColor: `#000`,
-        }, startAngle, endAngle, __radius);
+        }, startAngle, endAngle, __radius, "pointer");
       });
 
-      __radius = __radius * 0.85
+      __radius = __radius - 38; // __radius * 0.85
 
       drawSection(fabricCanvas, {
         title: '',
@@ -90,7 +91,7 @@ const CircularDiagram = ({ CircularDiagramData }) => {
         textColor: `black`,
       }, startAngle, endAngle, __radius);
 
-      __radius = __radius * 0.85
+      __radius = __radius - 20; // __radius * 0.85
 
       drawSection(fabricCanvas, {
         title: '',
@@ -98,15 +99,15 @@ const CircularDiagram = ({ CircularDiagramData }) => {
         textColor: `#000`,
       }, startAngle, endAngle, __radius);
 
-      drawIconCircle(fabricCanvas, section, startAngle, endAngle, __radius * .92);
+      drawIconCircle(fabricCanvas, section, startAngle, endAngle, __radius - (38 / 2));
 
       currentAngle = endAngle + gapInRadians;
     });
   };
 
-  const drawSection = (fabricCanvas, section, startAngle, endAngle, radius) => {
+  const drawSection = (fabricCanvas, section, startAngle, endAngle, radius, hoverCursor = "default") => {
     const outerRadius = radius;
-    const innerRadius = radius * 0.85;
+    const innerRadius = radius - 38; // radius * 0.85;
     
     const pathString = createArcPath(centerX, centerY, innerRadius, outerRadius, startAngle, endAngle);
     
@@ -118,12 +119,27 @@ const CircularDiagram = ({ CircularDiagramData }) => {
       strokeWidth: 2,
       selectable: false,
       // evented: false,
-      hoverCursor: "pointer"
+      hoverCursor
     });
 
-    sectionPath.on('mousedown', () => {
-      console.log(`Section clicked: ${section.title}`);
-    });
+    if(section.id) {
+      sectionPath.on('mousedown', () => {
+        // console.log(section);
+        onClick ? onClick(section) : null;
+      });
+
+      sectionPath.on('mouseover', () => {
+        // console.log(darkenHexColor(section.color, 50), section.color)
+        sectionPath.set({ fill: darkenHexColor(section.color, 10) });
+        fabricCanvasRef.current.renderAll();
+      });
+
+      sectionPath.on('mouseout', () => {
+        sectionPath.set({ fill: section.color });
+        fabricCanvasRef.current.renderAll();
+      });
+    }
+    
     
     fabricCanvas.add(sectionPath);
     
@@ -133,7 +149,7 @@ const CircularDiagram = ({ CircularDiagramData }) => {
   };
 
   const drawCurvedText = (fabricCanvas, text, startAngle, endAngle, innerRadius, outerRadius, color = 'white') => {
-    const textRadius = outerRadius - (outerRadius / 14);
+    const textRadius = outerRadius - (38 / 2) // - (outerRadius / 12);
     const angleSpan = endAngle - startAngle;
     
     // Font settings
@@ -147,7 +163,7 @@ const CircularDiagram = ({ CircularDiagramData }) => {
     for (let i = 0; i < text.length; i++) {
         const char = text[i];
         const charText = new fabric.Text(char, {
-            fontFamily: 'Arial',
+            fontFamily: fontFamily || 'Arial',
             fontSize: fontSize,
             fontWeight: 'normal'
         });
@@ -203,7 +219,7 @@ const CircularDiagram = ({ CircularDiagramData }) => {
     }
   };
 
-  const drawIconCircle = (fabricCanvas, section, startAngle, endAngle, radius) => {
+  const drawIconCircle = async (fabricCanvas, section, startAngle, endAngle, radius) => {
     const midAngle = (startAngle + endAngle) / 2;
     const iconRadius = radius;
     const iconX = centerX + iconRadius * Math.cos(midAngle);
@@ -222,54 +238,32 @@ const CircularDiagram = ({ CircularDiagramData }) => {
       evented: false
     });
     
-    const iconText = new fabric.Text(section.icon, {
+    fabricCanvas.add(circle);
+
+    const img = await fabric.FabricImage.fromURL(section.icon);
+    img.set({
       left: iconX,
       top: iconY,
-      fontSize: 20,
-      fill: section.color,
       originX: 'center',
       originY: 'center',
+      scaleX: 0.6,
+      scaleY: 0.6,
       selectable: false,
       evented: false
     });
+
+    fabricCanvas.add(img);
     
-    fabricCanvas.add(circle);
-    fabricCanvas.add(iconText);
+    
+    // fabricCanvas.add(iconText);
   };
 
-  const drawSectionItems = (fabricCanvas, section, startAngle, endAngle) => {
-    const midAngle = (startAngle + endAngle) / 2;
-    const itemRadius = (radius * 0.7 + radius) / 2;
-    
-    section.items.forEach((item, index) => {
-      const itemAngle = midAngle + (index - section.items.length / 2 + 0.5) * 0.15;
-      const itemX = centerX + itemRadius * Math.cos(itemAngle);
-      const itemY = centerY + itemRadius * Math.sin(itemAngle);
-      
-      const itemText = new fabric.Text(item.label, {
-        left: itemX,
-        top: itemY,
-        fontSize: 10,
-        fill: 'white',
-        originX: 'center',
-        originY: 'center',
-        angle: itemAngle > Math.PI/2 && itemAngle < 3*Math.PI/2 ? 
-               (itemAngle * 180 / Math.PI) + 90 : 
-               (itemAngle * 180 / Math.PI) - 90,
-        selectable: false,
-        evented: false
-      });
-      
-      fabricCanvas.add(itemText);
-    });
-  };
-
-  const drawCenterContent = (fabricCanvas) => {
+  const drawCenterContent = async (fabricCanvas) => {
     // Center circle
     const centerCircle = new fabric.Circle({
       left: centerX,
       top: centerY,
-      radius: 80,
+      radius: 64,
       fill: 'white',
       stroke: '#ddd',
       strokeWidth: 1,
@@ -279,84 +273,29 @@ const CircularDiagram = ({ CircularDiagramData }) => {
       evented: false
     });
     
-    // Center icon
-    const centerIconCircle = new fabric.Circle({
+    
+    const centerImg = await fabric.FabricImage.fromURL(CenterImage);
+    centerImg.set({
       left: centerX,
-      top: centerY - 20,
-      radius: 25,
-      fill: '#E91E63',
+      top: centerY,
       originX: 'center',
       originY: 'center',
-      selectable: false,
-      evented: false
-    });
-    
-    const centerIcon = new fabric.Text('🎯', {
-      left: centerX,
-      top: centerY - 20,
-      fontSize: 20,
-      fill: 'white',
-      originX: 'center',
-      originY: 'center',
-      selectable: false,
-      evented: false
-    });
-    
-    // Center texts
-    const centerTexts = [
-      'Cultural Awareness',
-      'Living Our Values', 
-      'Success Orientated',
-      'Collaborative Mindset'
-    ];
-    
-    centerTexts.forEach((text, index) => {
-      const textObj = new fabric.Text(text, {
-        left: centerX,
-        top: centerY + 10 + (index * 12),
-        fontSize: 11,
-        fill: '#333',
-        originX: 'center',
-        originY: 'center',
-        selectable: false,
-        evented: false
-      });
-      fabricCanvas.add(textObj);
-    });
-    
-    // Bottom section
-    const bottomPath = createArcPath(centerX, centerY, 80, radius * 0.7, Math.PI * 0.3, Math.PI * 0.7);
-    const bottomSection = new fabric.Path(bottomPath, {
-      fill: '#3498DB',
-      selectable: false,
-      evented: false
-    });
-    
-    const oneCQText = new fabric.Text('ONE CQ', {
-      left: centerX,
-      top: centerY + 100,
-      fontSize: 14,
-      fill: 'white',
-      fontWeight: 'bold',
-      originX: 'center',
-      originY: 'center',
+      scaleX: 0.8,
+      scaleY: 0.8,
       selectable: false,
       evented: false
     });
     
     fabricCanvas.add(centerCircle);
-    fabricCanvas.add(centerIconCircle);
-    fabricCanvas.add(centerIcon);
-    fabricCanvas.add(bottomSection);
-    fabricCanvas.add(oneCQText);
+    fabricCanvas.add(centerImg);
   };
 
   return (
     <canvas 
       ref={canvasRef}
       style={{ 
-        border: '1px solid #ddd',
-        borderRadius: '8px'
+        // border: '1px solid #ddd',
+        // borderRadius: '8px'
       }}
     />
   );

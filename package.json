@@ -1,8 +1,17 @@
 {
   "name": "circular-diagram",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.0.1",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/miketropi/circular-diagram"
+  },
+  "main": "dist/circular-diagram.umd.js",
+  "module": "dist/circular-diagram.es.js",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "vite build",

@@ -29,7 +29,7 @@ yarn add circular-diagram
 ## Quick Start
 
 ```jsx
-import React from 'react';
+import React, { useState } from 'react';
 import { CircularDiagram } from 'circular-diagram';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -40,7 +40,7 @@ import centerImage from './assets/center.png';
 
 const data = [
   {
-    id: uuidv4(),
+    id: 'SECTION_1',
     title: 'SECTION 1',
     color: '#FF6B35',
     icon: icon1,
@@ -58,7 +58,7 @@ const data = [
     ]
   },
   {
-    id: uuidv4(),
+    id: 'SECTION_2',
     title: 'SECTION 2',
     color: '#2E8B57',
     icon: icon2,
@@ -73,7 +73,12 @@ const data = [
 ];
 
 function App() {
+  const [parentActive, setParentActive] = useState('');
+
   const handleSectionClick = (section) => {
+    // Set the active parent section for highlighting
+    const activeId = section.parentId || section.id;
+    setParentActive(activeId);
     console.log('Clicked section:', section);
   };
 
@@ -84,6 +89,7 @@ function App() {
         CenterImage={centerImage}
         onClick={handleSectionClick}
         fontFamily="Arial"
+        parentActive={parentActive}
       />
     </div>
   );
@@ -102,6 +108,7 @@ export default App;
 | `CenterImage` | `string` | ✅ | - | URL or path to center image |
 | `onClick` | `function` | ❌ | - | Callback function when a section is clicked |
 | `fontFamily` | `string` | ❌ | `'Arial'` | Font family for text elements |
+| `parentActive` | `string` | ❌ | `''` | ID of the active parent section for highlighting |
 
 ### Data Structure
 
@@ -138,7 +145,13 @@ Called when a user clicks on any interactive section.
 
 **Example:**
 ```jsx
+const [parentActive, setParentActive] = useState('');
+
 const handleClick = (section) => {
+  // Handle section highlighting
+  const activeId = section.parentId || section.id;
+  setParentActive(activeId);
+  
   if (section.items) {
     // It's a main section
     console.log('Main section clicked:', section.title);
@@ -149,6 +162,29 @@ const handleClick = (section) => {
 };
 ```
 
+## Section Highlighting
+
+The `parentActive` prop enables visual highlighting of specific sections. When a section ID is provided, that section maintains full opacity (1.0) while all other sections become semi-transparent (0.3).
+
+### Usage
+
+```jsx
+const [parentActive, setParentActive] = useState('');
+
+// Highlight a specific section
+setParentActive('SECTION_1'); // Makes SECTION_1 fully visible, others fade
+
+// Clear highlighting
+setParentActive(''); // All sections return to full opacity
+```
+
+### Behavior
+
+- **Active Section**: Full opacity (1.0), fully interactive
+- **Inactive Sections**: Reduced opacity (0.3), still interactive
+- **Items**: Inherit the opacity of their parent section
+- **Reset**: Pass empty string to clear all highlighting
+
 ## Styling
 
 The component uses Fabric.js for rendering, which provides excellent performance and customization options. You can customize:
@@ -157,6 +193,7 @@ The component uses Fabric.js for rendering, which provides excellent performance
 - **Icons**: PNG/JPG/SVG images for sections and center
 - **Fonts**: Specify font family for text elements
 - **Hover Effects**: Built-in darkening effect on hover
+- **Section Highlighting**: Use `parentActive` prop for visual emphasis
 
 ## Examples
 

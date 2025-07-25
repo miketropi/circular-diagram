@@ -30,7 +30,7 @@ yarn add circular-diagram
 
 ```jsx
 import React from 'react';
-import CircularDiagram from 'circular-diagram';
+import { CircularDiagram } from 'circular-diagram';
 import { v4 as uuidv4 } from 'uuid';
 
 // Import your icons

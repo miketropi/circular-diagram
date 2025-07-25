@@ -2,7 +2,7 @@
 
 A customizable React component for creating interactive circular diagrams with Fabric.js. Perfect for displaying organizational charts, competency models, or any hierarchical data in a visually appealing circular format.
 
-![Circular Diagram Preview](./public/preview.jpg)
+![Circular Diagram Preview](./public/preview-live.jpg)
 
 ## Features
 
